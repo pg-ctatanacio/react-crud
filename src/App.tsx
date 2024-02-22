@@ -1,142 +1,93 @@
 import React, { useEffect, useLayoutEffect, useState } from "react";
-import logo from "./logo.svg";
 import "./App.css";
 
 import database from "./utils/firebase";
 import { onValue, push, ref, set } from "firebase/database";
 import {
-	Box,
-	Button,
-	Card,
-	CardContent,
 	Checkbox,
 	Container,
 	FormControl,
 	FormControlLabel,
 	FormGroup,
 	FormHelperText,
-	Input,
 	InputLabel,
 	MenuItem,
 	Paper,
 	Select,
-	Step,
-	StepLabel,
-	Stepper,
+	SelectChangeEvent,
 	TextField,
 	Typography,
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
+import { capitalizedFirst } from "./utils/text";
 
 function App() {
-	const [categories, setCategories] = useState<string[]>([]);
-
-	useLayoutEffect(() => {
-		console.log("useeffect called..");
-		// firebase.
-		const query = ref(database, "test");
-		return onValue(query, (snapshot) => {
-			const data = snapshot.val();
-
-			console.log(data);
-
-			setCategories(Object.values(data));
-
-			// if (snapshot.exists()) {
-			//     Object.values(data).map((project) => {
-			//         setProjects((projects) => [...projects, project]);
-			//     });
-			// }
-		});
-	}, []);
-
-	const handleClick = () => {
-		push(ref(database, "items"), {
-			category: "Drinks",
-			name: "Iced Tea",
-			is_single_sized: false,
-			price: 15.0,
-			cost: 10,
-			stocks: 5,
-		});
-	};
-
 	return <NewOrderForm />;
-
-	// return (
-	//     <div style={{
-	//         width: 500,
-	//         display: 'flex',
-	//         alignSelf: 'center'
-	//     }}>
-	//         <span>Hello World</span>
-	//         <FormControl fullWidth>
-	//             <Select
-	//                 labelId="demo-simple-select-label"
-	//                 id="demo-simple-select"
-	//                 // value={age}
-	//                 label="Category"
-	//                 defaultValue=""
-	//                 // onChange={handleChange}
-	//             >
-	//                 {
-	//                     categories.map((v, i) => {
-	//                         return <MenuItem key={i} value={v}>{v}</MenuItem>
-	//                     })
-	//                 }
-	//             </Select>
-
-	//             <Button variant="contained" onClick={handleClick}>Test</Button>
-	//         </FormControl>
-	//     </div>
-	// );
 }
-
-const steps = ["Shipping address", "Payment details", "Review your order"];
 
 const NewOrderForm = () => {
 	const [categories, setCategories] = useState<string[]>([]);
 	const [isSingleSized, setIsSingleSized] = useState<boolean>(true);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
+	const [category, setCategory] = useState<string>("");
+	const [name, setName] = useState<string>("");
+	const [price, setPrice] = useState<number>(0.0);
+	const [cost, setCost] = useState<number>(0.0);
+	const [stocks, setStocks] = useState<number>(0);
+
 	useLayoutEffect(() => {
-		const query = ref(database, "test");
+		const query = ref(database, "categories");
 		return onValue(query, (snapshot) => {
 			const data = snapshot.val();
 			setCategories(Object.values(data));
 		});
 	}, []);
 
-	useEffect(() => {
-		console.log("isSingleSized: ", isSingleSized);
-	}, [isSingleSized]);
-
 	const handleSaveClick = () => {
 		setIsLoading(true);
 
-        push(ref(database, "items"), {
-			category: "Drinks",
-			name: "Iced Tea",
-			is_single_sized: false,
-			price: 15.0,
-			cost: 10,
-			stocks: 5,
-		});
-
-		setTimeout(() => {
+		push(ref(database, "items"), {
+			category: category,
+			name: capitalizedFirst(name),
+			is_single_sized: isSingleSized,
+			price: price,
+			stocks: stocks,
+			cost: cost,
+		}).then(() => {
 			setIsLoading(false);
-		}, 2000);
+		});
+	};
+
+	const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setName(e.currentTarget.value);
+	};
+
+	const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setPrice(parseInt(e.currentTarget.value));
+	};
+
+	const handleCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setCost(parseInt(e.currentTarget.value));
+	};
+
+	const handleCategoryChange = (e: SelectChangeEvent) => {
+		setCategory(e.target.value);
+	};
+
+	const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setStocks(parseInt(e.target.value));
 	};
 
 	return (
 		<Container maxWidth="sm">
 			<Paper variant="outlined" sx={{ my: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}>
-                <Container disableGutters sx={{ mb: 2}}>
-                    <Typography component="h1" variant="h6">
-                        New Item
-                    </Typography>
-                    <Typography variant="caption">Fill up form below to add new item.</Typography>
-                </Container>
+				<Container disableGutters sx={{ mb: 2 }}>
+					<Typography component="h1" variant="h6">
+						New Item
+					</Typography>
+					<Typography variant="caption">Fill up form below to add new item.</Typography>
+				</Container>
 				<FormControl sx={{ mb: 2 }} fullWidth>
 					<InputLabel id="item-category-label" size="small">
 						Category
@@ -146,7 +97,9 @@ const NewOrderForm = () => {
 						label="Category"
 						defaultValue=""
 						size="small"
-						disabled={isLoading}>
+						onChange={handleCategoryChange}
+						disabled={isLoading}
+					>
 						{categories.map((v, i) => {
 							return (
 								<MenuItem key={i} value={v}>
@@ -162,6 +115,7 @@ const NewOrderForm = () => {
 						label="Name"
 						variant="outlined"
 						size="small"
+						onChange={handleNameChange}
 						disabled={isLoading}
 					/>
 				</FormControl>
@@ -172,6 +126,18 @@ const NewOrderForm = () => {
 						variant="outlined"
 						size="small"
 						type="number"
+						onChange={handlePriceChange}
+						disabled={isLoading}
+					/>
+				</FormControl>
+				<FormControl sx={{ mb: 2 }} fullWidth>
+					<TextField
+						id="outlined-basic"
+						label="Cost"
+						variant="outlined"
+						size="small"
+						type="number"
+						onChange={handleCostChange}
 						disabled={isLoading}
 					/>
 				</FormControl>
@@ -191,22 +157,6 @@ const NewOrderForm = () => {
 						Uncheck if item has sizes small, medium, large etc.
 					</FormHelperText>
 				</FormGroup>
-				{!isSingleSized && (
-					<FormControl sx={{ mb: 2 }} fullWidth>
-						<InputLabel id="item-size-label" size="small">
-							Size
-						</InputLabel>
-						<Select
-							labelId="item-size-label"
-							label="Size"
-							defaultValue=""
-							size="small"
-							disabled={isLoading}>
-							<MenuItem value="Small">Small</MenuItem>
-							<MenuItem value="Medium">Medium</MenuItem>
-						</Select>
-					</FormControl>
-				)}
 				<FormControl sx={{ mb: 2 }} fullWidth>
 					<TextField
 						id="outlined-basic"
@@ -214,6 +164,7 @@ const NewOrderForm = () => {
 						variant="outlined"
 						size="small"
 						type="number"
+						onChange={handleStockChange}
 						disabled={isLoading}
 					/>
 					<FormHelperText style={{ marginTop: 15 }}>
@@ -226,7 +177,8 @@ const NewOrderForm = () => {
 						size="medium"
 						variant="contained"
 						onClick={handleSaveClick}
-						loading={isLoading}>
+						loading={isLoading}
+					>
 						Save Item
 					</LoadingButton>
 				</FormGroup>
