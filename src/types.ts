@@ -5,6 +5,15 @@ export type Variant = {
 	stocks: number;
 };
 
+export type Item = {
+	category: string;
+	name: string;
+	price: number;
+	cost: number;
+	stocks: number;
+	variant: Variant[];
+};
+
 export type VariantForm = {
 	variant: Variant;
 	idx: number;

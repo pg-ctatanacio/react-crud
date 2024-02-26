@@ -30,12 +30,14 @@ const AddItemForm = () => {
 	const [sizes, setSizes] = useState<Sizes[]>([]);
 	const [isSingleSized, setIsSingleSized] = useState<boolean>(true);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+
+	const [errors, setErrors] = useState<Record<string, any>>({});
+
 	const [category, setCategory] = useState<string>("");
 	const [name, setName] = useState<string>("");
 	const [price, setPrice] = useState<number>(0);
 	const [cost, setCost] = useState<number>(0);
 	const [stocks, setStocks] = useState<number>(0);
-	const [errors, setErrors] = useState<Record<string, any>>({});
 	const [variants, setVariants] = useState<Variant[]>([
 		{
 			type: "",
@@ -84,7 +86,7 @@ const AddItemForm = () => {
 		const errorObj = validateForm();
 		if (Object.keys(errorObj).length > 0) {
 			setErrors(errorObj);
-            setIsLoading(false);
+			setIsLoading(false);
 		} else {
 			setTimeout(() => {
 				push(ref(database, "items"), {
@@ -103,13 +105,13 @@ const AddItemForm = () => {
 
 	const validateForm = () => {
 		let errorRecord: Record<string, any> = {};
-        if (name === "") {
-            errorRecord.name = "Item name is required.";
-        }
+		if (name === "") {
+			errorRecord.name = "Item name is required.";
+		}
 
-        if (category === "") {
-            errorRecord.category = "Item category is required.";
-        }
+		if (category === "") {
+			errorRecord.category = "Item category is required.";
+		}
 
 		if (!isSingleSized) {
 			let errors: Record<string, any>[] = [];
