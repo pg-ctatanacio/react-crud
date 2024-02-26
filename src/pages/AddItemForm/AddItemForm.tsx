@@ -84,6 +84,7 @@ const AddItemForm = () => {
 		const errorObj = validateForm();
 		if (Object.keys(errorObj).length > 0) {
 			setErrors(errorObj);
+            setIsLoading(false);
 		} else {
 			setTimeout(() => {
 				push(ref(database, "items"), {
@@ -102,6 +103,14 @@ const AddItemForm = () => {
 
 	const validateForm = () => {
 		let errorRecord: Record<string, any> = {};
+        if (name === "") {
+            errorRecord.name = "Item name is required.";
+        }
+
+        if (category === "") {
+            errorRecord.category = "Item category is required.";
+        }
+
 		if (!isSingleSized) {
 			let errors: Record<string, any>[] = [];
 			variants.map((variant, i) => {
@@ -123,14 +132,6 @@ const AddItemForm = () => {
 				errorRecord.variants = errors;
 			}
 		} else {
-			if (name === "") {
-				errorRecord.name = "Item name is required.";
-			}
-
-			if (category === "") {
-				errorRecord.category = "Item category is required.";
-			}
-
 			if (price === 0) {
 				errorRecord.price = "Item must have a valid price.";
 			}
@@ -153,7 +154,7 @@ const AddItemForm = () => {
 	};
 
 	const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>, idx?: number) => {
-		if (idx != undefined) {
+		if (idx !== undefined) {
 			let prevVariants = variants.slice();
 			prevVariants[idx].price = parseInt(e.currentTarget.value);
 			setVariants(prevVariants);
@@ -163,7 +164,7 @@ const AddItemForm = () => {
 	};
 
 	const handleCostChange = (e: React.ChangeEvent<HTMLInputElement>, idx?: number) => {
-		if (idx != undefined) {
+		if (idx !== undefined) {
 			let prevVariants = variants.slice();
 			prevVariants[idx].cost = parseInt(e.currentTarget.value);
 			setVariants(prevVariants);
@@ -177,7 +178,7 @@ const AddItemForm = () => {
 	};
 
 	const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>, idx?: number) => {
-		if (idx != undefined) {
+		if (idx !== undefined) {
 			let prevVariants = variants.slice();
 			prevVariants[idx].stocks = parseInt(e.currentTarget.value);
 			setVariants(prevVariants);
@@ -187,7 +188,7 @@ const AddItemForm = () => {
 	};
 
 	const handleSizeChange = (value: Sizes | null, idx?: number) => {
-		if (idx != undefined && value) {
+		if (idx !== undefined && value) {
 			let prevVariants = variants.slice();
 			prevVariants[idx].type = value.title;
 			setVariants(prevVariants);
@@ -213,7 +214,7 @@ const AddItemForm = () => {
 					</Typography>
 					<Typography variant="caption">Fill up form below to add new item.</Typography>
 				</Container>
-				<FormControl sx={{ mb: 2 }} fullWidth error={errors.category != undefined}>
+				<FormControl sx={{ mb: 2 }} fullWidth error={errors.category !== undefined}>
 					<InputLabel id="item-category-label" size="small">
 						Category
 					</InputLabel>
@@ -234,7 +235,7 @@ const AddItemForm = () => {
 							);
 						})}
 					</Select>
-					{errors.category != undefined && <FormHelperText>{errors.category}</FormHelperText>}
+					{errors.category !== undefined && <FormHelperText>{errors.category}</FormHelperText>}
 				</FormControl>
 				<FormControl sx={{ mb: 2 }} fullWidth>
 					<TextField
@@ -249,7 +250,7 @@ const AddItemForm = () => {
 							event.target.select();
 						}}
 						autoComplete="off"
-						error={errors.name != undefined}
+						error={errors.name !== undefined}
 						helperText={errors.name}
 					/>
 				</FormControl>
@@ -268,7 +269,7 @@ const AddItemForm = () => {
 									event.target.select();
 								}}
 								disabled={isLoading}
-								error={errors.price != undefined}
+								error={errors.price !== undefined}
 								helperText={errors.price}
 							/>
 						</FormControl>
@@ -318,7 +319,7 @@ const AddItemForm = () => {
 									handleCostChange={handleCostChange}
 									handleStocksChange={handleStockChange}
 									handleDeleteVariant={handleDeleteVariant}
-									error={errors.variants != undefined ? errors.variants[i] : {}}
+									error={errors.variants !== undefined ? errors.variants[i] : {}}
 								/>
 							);
 						})}

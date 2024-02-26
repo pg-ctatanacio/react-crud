@@ -5,11 +5,13 @@ import Menu from "./pages/Menu";
 import Sales from "./pages/Sales";
 
 import "./App.css";
+import Items from "./pages/Items";
 
 function App() {
 	return (
 		<Routes>
-			<Route path="/" element={<Menu />} />
+			<Route path="/" element={<Items />} />
+			<Route path="/menu" element={<Menu />} />
 			<Route path="/add-item" element={<AddItemForm />} />
 			<Route path="/sales" element={<Sales />} />
 		</Routes>
