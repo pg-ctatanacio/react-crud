@@ -1,5 +1,4 @@
 import React, { SyntheticEvent, forwardRef, useLayoutEffect, useState } from "react";
-import { DataSnapshot, onValue, push, ref, set } from "firebase/database";
 import {
 	Button,
 	Checkbox,
@@ -17,23 +16,19 @@ import {
 	Typography,
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
-import database from "../../utils/firebase";
-import { capitalizedFirst } from "../../utils/text";
-import { useNavigate } from "react-router-dom";
-import ItemSizeForm from "./ItemSizeForm";
-import { Sizes, Variant, Item } from "../../types";
 import useItemFormHandler from "./useItemFormHandler";
-import VariantFormTest from "./VariantFormTest";
-import useFirebaseRef from "./useFirebaseRef";
+import VariantForm from "./VariantForm";
+import useFirebaseRef from "../../hooks/useFirebaseRef";
+import { Item } from "../../types";
 
 type ItemFormParam = {
 	onSubmitClick?: (item: Item) => void;
 };
 
-const ItemFormTest = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
+const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-    const categories = useFirebaseRef('categories');
-    const sizes = useFirebaseRef('sizes');
+	const categories = useFirebaseRef("categories");
+	const sizes = useFirebaseRef("sizes");
 	const {
 		item,
 		setItemCategory,
@@ -204,7 +199,7 @@ const ItemFormTest = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 					<Container disableGutters sx={{ mb: 2 }}>
 						{item.variants.map((variant, i) => {
 							return (
-								<VariantFormTest
+								<VariantForm
 									key={i}
 									variant={variant}
 									sizes={sizes}
@@ -253,4 +248,4 @@ const ItemFormTest = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 	);
 });
 
-export default ItemFormTest;
+export default ItemForm;

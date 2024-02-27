@@ -6,13 +6,11 @@ import {
 	GridRenderCellParams,
 	GridTreeNodeWithRender,
 } from "@mui/x-data-grid";
-
-import database from "../../utils/firebase";
 import { Button, Container, Modal, Typography } from "@mui/material";
-import { Item, Variant } from "../../types";
-import ItemForm from "../AddItemForm/ItemForm";
-import ItemFormTest from "../AddItemForm/ItemFormTest";
+import ItemForm from "../ItemForm";
+import database from "../../utils/firebase";
 import { capitalizedFirst } from "../../utils/text";
+import { Item, Variant } from "../../types";
 
 interface ItemColumn {
 	id: string;
@@ -35,9 +33,9 @@ const Items = () => {
 		const query = ref(database, "items");
 		return onValue(query, (snapshot) => {
 			const data = snapshot.val();
-            if (data === null) {
-                return;
-            }
+			if (data === null) {
+				return;
+			}
 
 			let itemRows: any = [];
 			Object.keys(data).forEach((k) => {
@@ -102,8 +100,8 @@ const Items = () => {
 		},
 	];
 
-    const handleItemSubmitClick = (item: Item) => {
-        // setIsLoading(true);
+	const handleItemSubmitClick = (item: Item) => {
+		// setIsLoading(true);
 		let itemSizes: Record<string, any> = [];
 		if (item.isSingleSized) {
 			itemSizes.push({
@@ -115,28 +113,27 @@ const Items = () => {
 		} else {
 			itemSizes = item.variants;
 		}
-		
-        setTimeout(() => {
-            push(ref(database, "items"), {
-                category: item.category,
-                name: capitalizedFirst(item.name),
-                is_single_sized: item.isSingleSized,
-                sizes: itemSizes,
-            }).then(() => {
-                // clearItemForm();
-                // setIsLoading(false);
-                // navigate("/");
-                setOpenEditModal(false);
-            });
-        }, 500);
-    }
+
+		setTimeout(() => {
+			push(ref(database, "items"), {
+				category: item.category,
+				name: capitalizedFirst(item.name),
+				is_single_sized: item.isSingleSized,
+				sizes: itemSizes,
+			}).then(() => {
+				// clearItemForm();
+				// setIsLoading(false);
+				// navigate("/");
+				setOpenEditModal(false);
+			});
+		}, 500);
+	};
 
 	return (
 		<Container>
 			<Container
 				disableGutters
-				sx={{ my: 2, display: "flex", verticalAlign: "center", alignItems: "center" }}
-			>
+				sx={{ my: 2, display: "flex", verticalAlign: "center", alignItems: "center" }}>
 				<Container disableGutters>
 					<Typography component="h1" variant="h6">
 						Test
@@ -160,13 +157,9 @@ const Items = () => {
 				/>
 			</div>
 
-            <Modal
-                keepMounted
-                open={openEditModal}
-                onClose={handleCloseEditModal}
-            >
-                <ItemFormTest onSubmitClick={handleItemSubmitClick} />
-            </Modal>
+			<Modal keepMounted open={openEditModal} onClose={handleCloseEditModal}>
+				<ItemForm onSubmitClick={handleItemSubmitClick} />
+			</Modal>
 		</Container>
 	);
 };

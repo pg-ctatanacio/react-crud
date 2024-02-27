@@ -1,5 +1,4 @@
 import {
-	Autocomplete,
 	Container,
 	FormControl,
 	FormHelperText,
@@ -10,26 +9,25 @@ import {
 	Select,
 	TextField,
 } from "@mui/material";
-import { Sizes, VariantForm } from "../../types";
+import { VariantFormProps } from "../../types";
 import { ChangeEvent } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-const ItemSizeForm = ({
+const VariantForm = ({
 	variant,
-	idx,
 	sizes,
-	handleSizeChange,
-	handleCostChange,
+	handleTypeChange,
 	handlePriceChange,
+	handleCostChange,
 	handleStocksChange,
 	handleDeleteVariant,
 	error,
-}: VariantForm) => {
+}: VariantFormProps) => {
 	return (
 		<Container disableGutters sx={{ mb: 2 }}>
 			<Grid container spacing={1} sx={{ mb: 1 }}>
 				<Grid item xs={5}>
-					<FormControl fullWidth error={error && error.type != undefined}>
+					<FormControl fullWidth error={error && error.type !== undefined}>
 						<InputLabel id="item-size-label" size="small">
 							Sizes
 						</InputLabel>
@@ -38,20 +36,22 @@ const ItemSizeForm = ({
 							label="Sizes"
 							defaultValue=""
 							size="small"
-							// value={category}
-							onChange={(e) => handleSizeChange({ id: idx, title: e.target.value }, idx)}
+							value={variant.type}
+							onChange={(e) => handleTypeChange(e.target.value)}
 							// disabled={isLoading}
 						>
-							{sizes.map((v, i) => {
+							{sizes.map((value, index) => {
 								return (
-									<MenuItem key={i} value={v.title}>
-										{v.title}
+									<MenuItem key={index} value={value}>
+										{value}
 									</MenuItem>
 								);
 							})}
 						</Select>
 
-						{error && error.type != undefined && <FormHelperText>{error.type}</FormHelperText>}
+						{error && error.type !== undefined && (
+							<FormHelperText>{error.type}</FormHelperText>
+						)}
 					</FormControl>
 				</Grid>
 				<Grid item xs={2}>
@@ -59,12 +59,14 @@ const ItemSizeForm = ({
 						id="outlined-basic"
 						label="Price"
 						value={variant.price}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => handlePriceChange(e, idx)}
+						onChange={(e: ChangeEvent<HTMLInputElement>) =>
+							handlePriceChange(parseInt(e.target.value))
+						}
 						variant="outlined"
 						size="small"
 						type="number"
 						autoComplete="off"
-						error={error && error.price != undefined}
+						error={error && error.price !== undefined}
 						helperText={error && error.price}
 					/>
 				</Grid>
@@ -73,7 +75,9 @@ const ItemSizeForm = ({
 						id="outlined-basic"
 						label="Cost"
 						value={variant.cost}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => handleCostChange(e, idx)}
+						onChange={(e: ChangeEvent<HTMLInputElement>) =>
+							handleCostChange(parseInt(e.target.value))
+						}
 						variant="outlined"
 						size="small"
 						type="number"
@@ -85,7 +89,9 @@ const ItemSizeForm = ({
 						id="outlined-basic"
 						label="Stocks"
 						value={variant.stocks}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => handleStocksChange(e, idx)}
+						onChange={(e: ChangeEvent<HTMLInputElement>) =>
+							handleStocksChange(parseInt(e.target.value))
+						}
 						variant="outlined"
 						size="small"
 						type="number"
@@ -93,7 +99,7 @@ const ItemSizeForm = ({
 					/>
 				</Grid>
 				<Grid item xs={1} sx={{ display: "flex", justifyContent: "center" }}>
-					<IconButton aria-label="delete" color="error" onClick={() => handleDeleteVariant(idx)}>
+					<IconButton aria-label="delete" color="error" onClick={handleDeleteVariant}>
 						<DeleteIcon />
 					</IconButton>
 				</Grid>
@@ -102,4 +108,4 @@ const ItemSizeForm = ({
 	);
 };
 
-export default ItemSizeForm;
+export default VariantForm;
