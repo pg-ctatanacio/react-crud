@@ -11,8 +11,20 @@ export type Item = {
 	price: number;
 	cost: number;
 	stocks: number;
-	variant: Variant[];
+	variants: Variant[];
+    isSingleSized: boolean;
 };
+
+export type VariantFormProps = {
+    variant: Variant;
+    sizes: string[];
+    error: Record<string, any>;
+    handleTypeChange: (value: string) => void;
+    handlePriceChange: (value: number) => void;
+    handleCostChange: (value: number) => void;
+    handleStocksChange: (value: number) => void;
+    handleDeleteVariant: () => void;
+}
 
 export type VariantForm = {
 	variant: Variant;

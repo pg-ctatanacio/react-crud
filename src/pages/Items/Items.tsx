@@ -5,15 +5,14 @@ import {
 	GridColDef,
 	GridRenderCellParams,
 	GridTreeNodeWithRender,
-	GridValueGetterParams,
 } from "@mui/x-data-grid";
 
 import database from "../../utils/firebase";
-import { Button, Container, Modal, SelectChangeEvent, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import AddItemForm from "../AddItemForm";
+import { Button, Container, Modal, Typography } from "@mui/material";
 import { Item, Variant } from "../../types";
 import ItemForm from "../AddItemForm/ItemForm";
+import ItemFormTest from "../AddItemForm/ItemFormTest";
+import { capitalizedFirst } from "../../utils/text";
 
 interface ItemColumn {
 	id: string;
@@ -26,35 +25,19 @@ interface ItemColumn {
 }
 
 const Items = () => {
-	const navigate = useNavigate();
 	const [rows, setRows] = useState<ItemColumn[]>([]);
 	const [openEditModal, setOpenEditModal] = useState<boolean>(false);
 	const handleOpenEditModal = () => setOpenEditModal(true);
 	const handleCloseEditModal = () => setOpenEditModal(false);
-
-	const [item, setItem] = useState<Item>({
-		category: "",
-		name: "",
-		price: 0,
-		cost: 0,
-		stocks: 0,
-		variant: [
-			{
-				type: "",
-				price: 0,
-				cost: 0,
-				stocks: 0,
-			},
-		],
-	});
-
-	console.log(item);
 
 	// get items list and parse
 	useLayoutEffect(() => {
 		const query = ref(database, "items");
 		return onValue(query, (snapshot) => {
 			const data = snapshot.val();
+            if (data === null) {
+                return;
+            }
 
 			let itemRows: any = [];
 			Object.keys(data).forEach((k) => {
@@ -119,17 +102,34 @@ const Items = () => {
 		},
 	];
 
-	const handleCategoryChange = (e: SelectChangeEvent) => {
-		const newItemObj = { ...item };
-		newItemObj.category = e.target.value;
-		setItem(newItemObj);
-	};
-
-	const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const newItemObj = { ...item };
-		newItemObj.name = e.currentTarget.value;
-		setItem(newItemObj);
-	};
+    const handleItemSubmitClick = (item: Item) => {
+        // setIsLoading(true);
+		let itemSizes: Record<string, any> = [];
+		if (item.isSingleSized) {
+			itemSizes.push({
+				type: "Default",
+				price: item.price,
+				cost: item.cost,
+				stocks: item.stocks,
+			});
+		} else {
+			itemSizes = item.variants;
+		}
+		
+        setTimeout(() => {
+            push(ref(database, "items"), {
+                category: item.category,
+                name: capitalizedFirst(item.name),
+                is_single_sized: item.isSingleSized,
+                sizes: itemSizes,
+            }).then(() => {
+                // clearItemForm();
+                // setIsLoading(false);
+                // navigate("/");
+                setOpenEditModal(false);
+            });
+        }, 500);
+    }
 
 	return (
 		<Container>
@@ -143,7 +143,7 @@ const Items = () => {
 					</Typography>
 					<Typography variant="caption">Fill up form below to add new item.</Typography>
 				</Container>
-				<Button variant="contained" onClick={() => navigate("/add-item")}>
+				<Button variant="contained" onClick={() => setOpenEditModal(true)}>
 					Test
 				</Button>
 			</Container>
@@ -160,19 +160,13 @@ const Items = () => {
 				/>
 			</div>
 
-			<Modal
-				keepMounted
-				open={openEditModal}
-				onClose={handleCloseEditModal}
-				aria-labelledby="keep-mounted-modal-title"
-				aria-describedby="keep-mounted-modal-description"
-			>
-				<ItemForm
-					item={item}
-					onCategoryChange={handleCategoryChange}
-					onNameChange={handleNameChange}
-				/>
-			</Modal>
+            <Modal
+                keepMounted
+                open={openEditModal}
+                onClose={handleCloseEditModal}
+            >
+                <ItemFormTest onSubmitClick={handleItemSubmitClick} />
+            </Modal>
 		</Container>
 	);
 };
