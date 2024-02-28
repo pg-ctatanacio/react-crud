@@ -1,21 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Item, Variant } from "../../types";
 
-type SubmitCallback = (data: CustomItem) => void;
+type SubmitCallback = (data: Item) => void;
 
-type CustomItem = {
-	category: string;
-	name: string;
-	price: number;
-	cost: number;
-	stocks: number;
-	variants: Variant[];
-	isSingleSized: boolean;
-	errors: Record<string, any>;
-};
-
-const useItemFormHandler = (newItem?: CustomItem) => {
-	const [item, setItem] = useState<CustomItem>({
+const useItemFormHandler = (newItem?: Item) => {
+	const [item, setItem] = useState<Item>({
+        firebaseId: undefined,
 		category: "",
 		name: "",
 		price: 0,
@@ -33,7 +23,7 @@ const useItemFormHandler = (newItem?: CustomItem) => {
 		errors: {},
 	});
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (newItem !== undefined) {
 			setItem(newItem);
 		}

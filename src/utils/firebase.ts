@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
+import { child, get, getDatabase, ref } from "firebase/database";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -18,5 +18,17 @@ let firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-export default getDatabase(app);
+const getRef = async (path: string) => {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, path));
+    if (!snapshot.exists()) {
+        console.error('No data available.');
+        return;
+    }
+
+    return snapshot.val();
+}
+
+export { database, getRef };

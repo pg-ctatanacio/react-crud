@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useLayoutEffect, useState } from "react";
+import React, { SyntheticEvent, useEffect, useLayoutEffect, useState } from "react";
 import { DataSnapshot, onValue, push, ref, set } from "firebase/database";
 import {
 	DataGrid,
@@ -8,23 +8,14 @@ import {
 } from "@mui/x-data-grid";
 import { Button, Container, Modal, Typography } from "@mui/material";
 import ItemForm from "../ItemForm";
-import database from "../../utils/firebase";
+import { database, getRef } from "../../utils/firebase";
 import { capitalizedFirst } from "../../utils/text";
 import { Item, Variant } from "../../types";
 
-interface ItemColumn {
-	id: string;
-	category: string;
-	name: string;
-	size: string;
-	price: number;
-	cost: number;
-	stocks: number;
-}
-
 const Items = () => {
-	const [rows, setRows] = useState<ItemColumn[]>([]);
+	const [rows, setRows] = useState<Item[]>([]);
 	const [openEditModal, setOpenEditModal] = useState<boolean>(false);
+    const [itemToUpdate, setItemToUpdate] = useState<Item>();
 	const handleOpenEditModal = () => setOpenEditModal(true);
 	const handleCloseEditModal = () => setOpenEditModal(false);
 
@@ -43,8 +34,9 @@ const Items = () => {
 
 				// loop thru sizes to get variants
 				let row = rowObj.sizes.map((v: any, i: number) => {
-					let itemRow: Partial<ItemColumn> = {};
-					itemRow.id = k + i;
+					let itemRow: Partial<Item> = {};
+					itemRow.id = k + '_' + i;
+                    itemRow.firebaseId = k;
 					itemRow.category = rowObj.category;
 					itemRow.name = rowObj.name;
 					itemRow.size = v.type;
@@ -57,16 +49,88 @@ const Items = () => {
 				itemRows = [...itemRows, ...row];
 			});
 
+            console.log(itemRows);
+
 			setRows(itemRows);
 		});
 	}, []);
 
-	const handleEditClick = (id: any) => {
+    useEffect(() => {
+        if (openEditModal === false) {
+            setItemToUpdate(undefined);
+        }
+    }, [openEditModal]);
+
+	const handleEditClick = async (id: any) => {
+        const itemDetails = await getRef('items/' + id);
+
+        if (!itemDetails) {
+            console.error('No item details.');
+            return;
+        }
+
+        setItemToUpdate({
+            firebaseId: id,
+            category: itemDetails.category,
+            name: itemDetails.name,
+            price: itemDetails.is_single_sized ? itemDetails.sizes[0].price : itemDetails.price,
+            cost: itemDetails.is_single_sized ? itemDetails.sizes[0].cost : itemDetails.cost,
+            stocks: itemDetails.is_single_sized ? itemDetails.sizes[0].stocks : itemDetails.stocks,
+            isSingleSized: itemDetails.is_single_sized,
+            variants: itemDetails.sizes
+        });
+
 		handleOpenEditModal();
 	};
 
+    const handleItemSubmitClick = (item: Item) => {
+		// setIsLoading(true);
+		let itemSizes: Record<string, any> = [];
+		if (item.isSingleSized) {
+			itemSizes.push({
+				type: "Default",
+				price: item.price,
+				cost: item.cost,
+				stocks: item.stocks,
+			});
+		} else {
+			itemSizes = item.variants;
+		}
+
+		setTimeout(() => {
+            if (itemToUpdate) {
+                console.log('updating item..');
+                set(ref(database, "items/" + item.firebaseId), {
+                    category: item.category,
+                	name: capitalizedFirst(item.name),
+                	is_single_sized: item.isSingleSized,
+                	sizes: itemSizes,
+                }).then(() => {
+                	// clearItemForm();
+                	// setIsLoading(false);
+                	// navigate("/");
+                	setOpenEditModal(false);
+                });
+            } else {
+                console.log('adding to items..');
+
+                push(ref(database, "items"), {
+                	category: item.category,
+                	name: capitalizedFirst(item.name),
+                	is_single_sized: item.isSingleSized,
+                	sizes: itemSizes,
+                }).then(() => {
+                	// clearItemForm();
+                	// setIsLoading(false);
+                	// navigate("/");
+                	setOpenEditModal(false);
+                });
+            }
+		}, 500);
+	};
+
 	const renderButton = (params: GridRenderCellParams<any, any, any, GridTreeNodeWithRender>) => {
-		return <Button onClick={() => handleEditClick(params.id)}>Test</Button>;
+		return <Button onClick={() => handleEditClick(params.row.firebaseId)}>Test</Button>;
 	};
 
 	const itemColumns: GridColDef[] = [
@@ -100,35 +164,6 @@ const Items = () => {
 		},
 	];
 
-	const handleItemSubmitClick = (item: Item) => {
-		// setIsLoading(true);
-		let itemSizes: Record<string, any> = [];
-		if (item.isSingleSized) {
-			itemSizes.push({
-				type: "Default",
-				price: item.price,
-				cost: item.cost,
-				stocks: item.stocks,
-			});
-		} else {
-			itemSizes = item.variants;
-		}
-
-		setTimeout(() => {
-			push(ref(database, "items"), {
-				category: item.category,
-				name: capitalizedFirst(item.name),
-				is_single_sized: item.isSingleSized,
-				sizes: itemSizes,
-			}).then(() => {
-				// clearItemForm();
-				// setIsLoading(false);
-				// navigate("/");
-				setOpenEditModal(false);
-			});
-		}, 500);
-	};
-
 	return (
 		<Container>
 			<Container
@@ -158,7 +193,7 @@ const Items = () => {
 			</div>
 
 			<Modal keepMounted open={openEditModal} onClose={handleCloseEditModal}>
-				<ItemForm onSubmitClick={handleItemSubmitClick} />
+				<ItemForm onSubmitClick={handleItemSubmitClick} itemToUpdate={itemToUpdate} />
 			</Modal>
 		</Container>
 	);

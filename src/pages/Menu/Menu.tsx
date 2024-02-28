@@ -1,6 +1,6 @@
 import { useLayoutEffect } from "react";
 
-import database from "../../utils/firebase";
+import { database } from "../../utils/firebase";
 import { onValue, ref } from "firebase/database";
 import { Button, Container, Grid, Tab, Tabs, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
