@@ -18,17 +18,18 @@ import {
 import { LoadingButton } from "@mui/lab";
 import useItemFormHandler from "./useItemFormHandler";
 import VariantForm from "./VariantForm";
-import useFirebaseRef from "../../hooks/useFirebaseRef";
 import { Item } from "../../types";
+import { getRef } from "../../utils/firebase";
 
 type ItemFormParam = {
+	itemToUpdate?: Item;
 	onSubmitClick?: (item: Item) => void;
 };
 
-const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
+const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref) => {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const categories = useFirebaseRef("categories");
-	const sizes = useFirebaseRef("sizes");
+	const [categories, setCategories] = useState<string[]>([]);
+	const [sizes, setSizes] = useState<string[]>([]);
 	const {
 		item,
 		setItemCategory,
@@ -39,7 +40,18 @@ const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 		setItemCost,
 		setItemStocks,
 		handleSubmit,
-	} = useItemFormHandler();
+	} = useItemFormHandler(itemToUpdate);
+
+	useLayoutEffect(() => {
+		const initForm = async () => {
+			const _categories = await getRef("categories");
+			const _sizes = await getRef("sizes");
+			setCategories(_categories);
+			setSizes(_sizes);
+		};
+
+		initForm();
+	}, []);
 
 	const handleVariantTypeChange = (value: string, index: number) => {
 		item.variants[index].type = value;
@@ -91,11 +103,14 @@ const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 			<Paper variant="outlined" sx={{ my: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}>
 				<Container disableGutters sx={{ mb: 2 }}>
 					<Typography component="h1" variant="h6">
-						New Item
+						{itemToUpdate ? "Update Item" : "New Item"}
 					</Typography>
-					<Typography variant="caption">Fill up form below to add new item.</Typography>
+					{!itemToUpdate && <Typography variant="caption">Fill up form below to add new item.</Typography>}
 				</Container>
-				<FormControl sx={{ mb: 2 }} fullWidth error={item.errors.category !== undefined}>
+				<FormControl
+					sx={{ mb: 2 }}
+					fullWidth
+					error={item.errors && item.errors.category !== undefined}>
 					<InputLabel id="item-category-label" size="small">
 						Category
 					</InputLabel>
@@ -115,7 +130,7 @@ const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 							);
 						})}
 					</Select>
-					{item.errors.category !== undefined && (
+					{item.errors && item.errors.category !== undefined && (
 						<FormHelperText>{item.errors.category}</FormHelperText>
 					)}
 				</FormControl>
@@ -134,8 +149,8 @@ const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 							event.target.select();
 						}}
 						autoComplete="off"
-						error={item.errors.name !== undefined}
-						helperText={item.errors.name}
+						error={item.errors && item.errors.name !== undefined}
+						helperText={item.errors && item.errors.name}
 					/>
 				</FormControl>
 				{item.isSingleSized ? (
@@ -155,8 +170,8 @@ const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 									event.target.select();
 								}}
 								disabled={isLoading}
-								error={item.errors.price !== undefined}
-								helperText={item.errors.price}
+								error={item.errors && item.errors.price !== undefined}
+								helperText={item.errors && item.errors.price}
 							/>
 						</FormControl>
 						<FormControl sx={{ mb: 2 }} fullWidth>
@@ -208,7 +223,9 @@ const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 									handleCostChange={(val) => handleVariantCostChange(val, i)}
 									handleStocksChange={(val) => handleVariantStocksChange(val, i)}
 									handleDeleteVariant={() => handleVariantDelete(i)}
-									error={item.errors.variant && item.errors.variant[i]}
+									error={
+										item.errors && item.errors.variant && item.errors.variant[i]
+									}
 								/>
 							);
 						})}
@@ -240,7 +257,7 @@ const ItemForm = forwardRef(({ onSubmitClick }: ItemFormParam, ref) => {
 						variant="contained"
 						onClick={() => handleSubmit(handleItemSubmit)}
 						loading={isLoading}>
-						Save Item
+						{itemToUpdate ? 'Update item' : 'Save item'}
 					</LoadingButton>
 				</FormGroup>
 			</Paper>
