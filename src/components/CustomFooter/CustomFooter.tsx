@@ -27,6 +27,10 @@ const theme = createTheme({
 });
 
 const CustomFooter = () => {
+    const handleClick = () => {
+        window.open('https://github.com/pg-ctatanacio/react-crud')
+    }
+    
 	return (
 		<ThemeProvider theme={theme}>
 			<Container sx={{ my: 5 }}>
@@ -36,7 +40,8 @@ const CustomFooter = () => {
 						color="dark"
 						variant="contained"
 						startIcon={<GitHub />}
-						sx={{ mr: 2 }}>
+						sx={{ mr: 2 }}
+                        onClick={handleClick}>
 						Github Repository
 					</Button>
 					<Typography component="span" fontSize={13} fontWeight="fontWeightMedium">
