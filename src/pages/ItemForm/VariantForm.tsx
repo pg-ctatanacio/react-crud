@@ -98,8 +98,8 @@ const VariantForm = ({
 						autoComplete="off"
 					/>
 				</Grid>
-				<Grid item xs={1} sx={{ display: "flex", justifyContent: "center" }}>
-					<IconButton aria-label="delete" color="error" onClick={handleDeleteVariant}>
+				<Grid item xs={1} sx={{  }}>
+					<IconButton aria-label="delete" color="error" onClick={handleDeleteVariant} >
 						<DeleteIcon />
 					</IconButton>
 				</Grid>

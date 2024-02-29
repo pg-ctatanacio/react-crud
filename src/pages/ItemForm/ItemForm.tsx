@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, forwardRef, useLayoutEffect, useState } from "react";
+import React, { forwardRef, useLayoutEffect, useState } from "react";
 import {
 	Button,
 	Checkbox,
@@ -7,6 +7,7 @@ import {
 	FormControlLabel,
 	FormGroup,
 	FormHelperText,
+	Grid,
 	InputLabel,
 	MenuItem,
 	Paper,
@@ -22,16 +23,17 @@ import { Item } from "../../types";
 import { getRef } from "../../utils/firebase";
 
 type ItemFormParam = {
-	itemToUpdate?: Item;
+	item?: Item;
+    isLoading?: boolean;
 	onSubmitClick?: (item: Item) => void;
+    onCloseClick?: () => void;
 };
 
-const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref) => {
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+const ItemForm = forwardRef(({ item, isLoading = false, onSubmitClick, onCloseClick }: ItemFormParam, ref) => {
 	const [categories, setCategories] = useState<string[]>([]);
 	const [sizes, setSizes] = useState<string[]>([]);
 	const {
-		item,
+		validatedItem,
 		setItemCategory,
 		setItemName,
 		setIsSingleSized,
@@ -39,8 +41,10 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 		setItemPrice,
 		setItemCost,
 		setItemStocks,
-		handleSubmit,
-	} = useItemFormHandler(itemToUpdate);
+		handleSubmit
+	} = useItemFormHandler(item);
+
+    const isUpdate = item?.firebaseId !== undefined;
 
 	useLayoutEffect(() => {
 		const initForm = async () => {
@@ -54,27 +58,27 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 	}, []);
 
 	const handleVariantTypeChange = (value: string, index: number) => {
-		item.variants[index].type = value;
-		setVariants(item.variants);
+		validatedItem.variants[index].type = value;
+		setVariants(validatedItem.variants);
 	};
 
 	const handleVariantPriceChange = (value: number, index: number) => {
-		item.variants[index].price = value;
-		setVariants(item.variants);
+		validatedItem.variants[index].price = value;
+		setVariants(validatedItem.variants);
 	};
 
 	const handleVariantCostChange = (value: number, index: number) => {
-		item.variants[index].cost = value;
-		setVariants(item.variants);
+		validatedItem.variants[index].cost = value;
+		setVariants(validatedItem.variants);
 	};
 
 	const handleVariantStocksChange = (value: number, index: number) => {
-		item.variants[index].stocks = value;
-		setVariants(item.variants);
+		validatedItem.variants[index].stocks = value;
+		setVariants(validatedItem.variants);
 	};
 
 	const handleVariantAdd = () => {
-		let prevVariants = item.variants.slice();
+		let prevVariants = validatedItem.variants.slice();
 		prevVariants.push({
 			type: "",
 			price: 0,
@@ -85,7 +89,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 	};
 
 	const handleVariantDelete = (index: number) => {
-		let prevVariants = item.variants.slice();
+		let prevVariants = validatedItem.variants.slice();
 		if (prevVariants.length === 1) {
 			return;
 		}
@@ -103,14 +107,14 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 			<Paper variant="outlined" sx={{ my: { xs: 3, md: 6 }, p: { xs: 2, md: 3 } }}>
 				<Container disableGutters sx={{ mb: 2 }}>
 					<Typography component="h1" variant="h6">
-						{itemToUpdate ? "Update Item" : "New Item"}
+						{isUpdate ? "Update Item" : "New Item"}
 					</Typography>
-					{!itemToUpdate && <Typography variant="caption">Fill up form below to add new item.</Typography>}
+					{!isUpdate && <Typography variant="caption">Fill up form below to add new item.</Typography>}
 				</Container>
 				<FormControl
 					sx={{ mb: 2 }}
 					fullWidth
-					error={item.errors && item.errors.category !== undefined}>
+					error={validatedItem.errors && validatedItem.errors.category !== undefined}>
 					<InputLabel id="item-category-label" size="small">
 						Category
 					</InputLabel>
@@ -119,7 +123,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 						label="Category"
 						defaultValue=""
 						size="small"
-						value={item.category}
+						value={validatedItem.category}
 						onChange={(e: SelectChangeEvent) => setItemCategory(e.target.value)}
 						disabled={isLoading}>
 						{categories.map((v, i) => {
@@ -130,8 +134,8 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 							);
 						})}
 					</Select>
-					{item.errors && item.errors.category !== undefined && (
-						<FormHelperText>{item.errors.category}</FormHelperText>
+					{validatedItem.errors && validatedItem.errors.category !== undefined && (
+						<FormHelperText>{validatedItem.errors.category}</FormHelperText>
 					)}
 				</FormControl>
 				<FormControl sx={{ mb: 2 }} fullWidth>
@@ -140,7 +144,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 						label="Name"
 						variant="outlined"
 						size="small"
-						value={item.name}
+						value={validatedItem.name}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 							setItemName(e.target.value)
 						}
@@ -149,11 +153,11 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 							event.target.select();
 						}}
 						autoComplete="off"
-						error={item.errors && item.errors.name !== undefined}
-						helperText={item.errors && item.errors.name}
+						error={validatedItem.errors && validatedItem.errors.name !== undefined}
+						helperText={validatedItem.errors && validatedItem.errors.name}
 					/>
 				</FormControl>
-				{item.isSingleSized ? (
+				{validatedItem.isSingleSized ? (
 					<>
 						<FormControl sx={{ mb: 2 }} fullWidth>
 							<TextField
@@ -162,7 +166,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 								variant="outlined"
 								size="small"
 								type="number"
-								value={item.price}
+								value={validatedItem.price}
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 									setItemPrice(parseInt(e.target.value))
 								}
@@ -170,8 +174,8 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 									event.target.select();
 								}}
 								disabled={isLoading}
-								error={item.errors && item.errors.price !== undefined}
-								helperText={item.errors && item.errors.price}
+								error={validatedItem.errors && validatedItem.errors.price !== undefined}
+								helperText={validatedItem.errors && validatedItem.errors.price}
 							/>
 						</FormControl>
 						<FormControl sx={{ mb: 2 }} fullWidth>
@@ -181,7 +185,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 								variant="outlined"
 								size="small"
 								type="number"
-								value={item.cost}
+								value={validatedItem.cost}
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 									setItemCost(parseInt(e.target.value))
 								}
@@ -199,7 +203,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 								variant="outlined"
 								size="small"
 								type="number"
-								value={item.stocks}
+								value={validatedItem.stocks}
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 									setItemStocks(parseInt(e.target.value))
 								}
@@ -212,7 +216,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 					</>
 				) : (
 					<Container disableGutters sx={{ mb: 2 }}>
-						{item.variants.map((variant, i) => {
+						{validatedItem.variants.map((variant, i) => {
 							return (
 								<VariantForm
 									key={i}
@@ -224,7 +228,7 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 									handleStocksChange={(val) => handleVariantStocksChange(val, i)}
 									handleDeleteVariant={() => handleVariantDelete(i)}
 									error={
-										item.errors && item.errors.variant && item.errors.variant[i]
+										(validatedItem.errors && validatedItem.errors.variants) && validatedItem.errors.variants[i]
 									}
 								/>
 							);
@@ -239,9 +243,9 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 						control={
 							<Checkbox
 								size="small"
-								checked={item.isSingleSized}
+								checked={validatedItem.isSingleSized}
 								disabled={isLoading}
-								onClick={() => setIsSingleSized(!item.isSingleSized)}
+								onClick={() => setIsSingleSized(!validatedItem.isSingleSized)}
 							/>
 						}
 						label="Single Size"
@@ -251,15 +255,28 @@ const ItemForm = forwardRef(({ itemToUpdate, onSubmitClick }: ItemFormParam, ref
 					</FormHelperText>
 				</FormGroup>
 
-				<FormGroup>
-					<LoadingButton
-						size="medium"
-						variant="contained"
-						onClick={() => handleSubmit(handleItemSubmit)}
-						loading={isLoading}>
-						{itemToUpdate ? 'Update item' : 'Save item'}
-					</LoadingButton>
-				</FormGroup>
+				<Grid container spacing={1}>
+                    <Grid item xs={6}>
+                        <LoadingButton
+                            size="medium"
+                            variant="contained"
+                            onClick={() => handleSubmit(handleItemSubmit)}
+                            fullWidth
+                            loading={isLoading}>
+                            {isUpdate ? 'Update item' : 'Save item'}
+                        </LoadingButton>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <LoadingButton
+                            size="medium"
+                            variant="outlined"
+                            onClick={onCloseClick}
+                            fullWidth
+                            loading={isLoading}>
+                            Close
+                        </LoadingButton>
+                    </Grid>
+				</Grid>
 			</Paper>
 		</Container>
 	);
