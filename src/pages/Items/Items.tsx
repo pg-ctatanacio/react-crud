@@ -119,7 +119,7 @@ const Items = () => {
 
 		setIsLoading(true);
 
-        // Add timeout to show loading..
+		// Add timeout to show loading..
 		setTimeout(() => {
 			if (item.firebaseId) {
 				set(ref(database, "items/" + item.firebaseId), {
@@ -180,7 +180,7 @@ const Items = () => {
 
 	const itemColumns: GridColDef[] = [
 		{ field: "category", headerName: "Category", width: 180 },
-		{ field: "name", headerName: "Name", flex: 1 },
+		{ field: "name", headerName: "Name", flex: 1, minWidth: 200 },
 		{ field: "size", headerName: "Size", width: 100 },
 		{
 			field: "price",
@@ -206,6 +206,7 @@ const Items = () => {
 			width: 130,
 			align: "right",
 			sortable: false,
+			filterable: false,
 			renderCell: renderButton,
 		},
 	];
@@ -233,18 +234,18 @@ const Items = () => {
 					</Button>
 				</Container>
 			</Container>
-            <Container disableGutters sx={{  height: 371 }}>
-                <DataGrid
-                    rows={rows}
-                    columns={itemColumns}
-                    initialState={{
-                        pagination: {
-                            paginationModel: { page: 0, pageSize: 5 },
-                        },
-                    }}
-                    pageSizeOptions={[5, 10]}
-                />
-            </Container>
+			<Container disableGutters>
+				<DataGrid
+					rows={rows}
+					columns={itemColumns}
+					initialState={{
+						pagination: {
+							paginationModel: { page: 0, pageSize: 20 },
+						},
+					}}
+					pageSizeOptions={[5, 10, 20, 50, 100]}
+				/>
+			</Container>
 			<Modal keepMounted open={openEditModal} onClose={handleCloseEditModal}>
 				<ItemForm
 					item={item}
