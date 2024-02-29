@@ -1,5 +1,5 @@
-import React, { SyntheticEvent, useEffect, useLayoutEffect, useState } from "react";
-import { DataSnapshot, onValue, push, ref, set } from "firebase/database";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { onValue, push, ref, set } from "firebase/database";
 import {
 	DataGrid,
 	GridColDef,
@@ -7,15 +7,34 @@ import {
 	GridTreeNodeWithRender,
 } from "@mui/x-data-grid";
 import { Button, Container, Modal, Typography } from "@mui/material";
+import { AddCircleOutline, Edit } from "@mui/icons-material";
 import ItemForm from "../ItemForm";
+import CustomFooter from "../../components/CustomFooter";
 import { database, getRef } from "../../utils/firebase";
 import { capitalizedFirst } from "../../utils/text";
-import { Item, Variant } from "../../types";
+import { Item } from "../../types";
 
 const Items = () => {
 	const [rows, setRows] = useState<Item[]>([]);
 	const [openEditModal, setOpenEditModal] = useState<boolean>(false);
-    const [itemToUpdate, setItemToUpdate] = useState<Item>();
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [item, setItem] = useState<Item>({
+		category: "",
+		name: "",
+		price: 0,
+		cost: 0,
+		stocks: 0,
+		variants: [
+			{
+				type: "",
+				price: 0,
+				cost: 0,
+				stocks: 0,
+			},
+		],
+		isSingleSized: true,
+		errors: {},
+	});
 	const handleOpenEditModal = () => setOpenEditModal(true);
 	const handleCloseEditModal = () => setOpenEditModal(false);
 
@@ -35,8 +54,8 @@ const Items = () => {
 				// loop thru sizes to get variants
 				let row = rowObj.sizes.map((v: any, i: number) => {
 					let itemRow: Partial<Item> = {};
-					itemRow.id = k + '_' + i;
-                    itemRow.firebaseId = k;
+					itemRow.id = k + "_" + i;
+					itemRow.firebaseId = k;
 					itemRow.category = rowObj.category;
 					itemRow.name = rowObj.name;
 					itemRow.size = v.type;
@@ -49,42 +68,43 @@ const Items = () => {
 				itemRows = [...itemRows, ...row];
 			});
 
-            console.log(itemRows);
-
 			setRows(itemRows);
 		});
 	}, []);
 
-    useEffect(() => {
-        if (openEditModal === false) {
-            setItemToUpdate(undefined);
-        }
-    }, [openEditModal]);
+	useEffect(() => {
+		if (openEditModal === false) {
+			resetItem();
+		}
+	}, [openEditModal]);
 
 	const handleEditClick = async (id: any) => {
-        const itemDetails = await getRef('items/' + id);
+		const itemDetails = await getRef("items/" + id);
 
-        if (!itemDetails) {
-            console.error('No item details.');
-            return;
-        }
+		if (!itemDetails) {
+			console.error("No item details.");
+			return;
+		}
 
-        setItemToUpdate({
-            firebaseId: id,
-            category: itemDetails.category,
-            name: itemDetails.name,
-            price: itemDetails.is_single_sized ? itemDetails.sizes[0].price : itemDetails.price,
-            cost: itemDetails.is_single_sized ? itemDetails.sizes[0].cost : itemDetails.cost,
-            stocks: itemDetails.is_single_sized ? itemDetails.sizes[0].stocks : itemDetails.stocks,
-            isSingleSized: itemDetails.is_single_sized,
-            variants: itemDetails.sizes
-        });
+		setItem({
+			firebaseId: id,
+			category: itemDetails.category,
+			name: itemDetails.name,
+			price: itemDetails.is_single_sized ? itemDetails.sizes[0].price : itemDetails.price,
+			cost: itemDetails.is_single_sized ? itemDetails.sizes[0].cost : itemDetails.cost,
+			stocks: itemDetails.is_single_sized ? itemDetails.sizes[0].stocks : itemDetails.stocks,
+			isSingleSized: itemDetails.is_single_sized,
+			variants: itemDetails.sizes,
+		});
 
 		handleOpenEditModal();
 	};
 
-    const handleItemSubmitClick = (item: Item) => {
-		// setIsLoading(true);
+	const handleItemSubmitClick = (item: Item) => {
+		if (item.errors && Object.keys(item.errors).length > 0) {
+			return;
+		}
+
 		let itemSizes: Record<string, any> = [];
 		if (item.isSingleSized) {
 			itemSizes.push({
@@ -97,40 +117,65 @@ const Items = () => {
 			itemSizes = item.variants;
 		}
 
-		setTimeout(() => {
-            if (itemToUpdate) {
-                console.log('updating item..');
-                set(ref(database, "items/" + item.firebaseId), {
-                    category: item.category,
-                	name: capitalizedFirst(item.name),
-                	is_single_sized: item.isSingleSized,
-                	sizes: itemSizes,
-                }).then(() => {
-                	// clearItemForm();
-                	// setIsLoading(false);
-                	// navigate("/");
-                	setOpenEditModal(false);
-                });
-            } else {
-                console.log('adding to items..');
+		setIsLoading(true);
 
-                push(ref(database, "items"), {
-                	category: item.category,
-                	name: capitalizedFirst(item.name),
-                	is_single_sized: item.isSingleSized,
-                	sizes: itemSizes,
-                }).then(() => {
-                	// clearItemForm();
-                	// setIsLoading(false);
-                	// navigate("/");
-                	setOpenEditModal(false);
-                });
-            }
+        // Add timeout to show loading..
+		setTimeout(() => {
+			if (item.firebaseId) {
+				set(ref(database, "items/" + item.firebaseId), {
+					category: item.category,
+					name: capitalizedFirst(item.name),
+					is_single_sized: item.isSingleSized,
+					sizes: itemSizes,
+				}).then(() => {
+					setIsLoading(false);
+					resetItem();
+					setOpenEditModal(false);
+				});
+			} else {
+				push(ref(database, "items"), {
+					category: item.category,
+					name: capitalizedFirst(item.name),
+					is_single_sized: item.isSingleSized,
+					sizes: itemSizes,
+				}).then(() => {
+					setIsLoading(false);
+					resetItem();
+					setOpenEditModal(false);
+				});
+			}
 		}, 500);
 	};
 
+	const resetItem = () => {
+		setItem({
+			category: "",
+			name: "",
+			price: 0,
+			cost: 0,
+			stocks: 0,
+			variants: [
+				{
+					type: "",
+					price: 0,
+					cost: 0,
+					stocks: 0,
+				},
+			],
+			isSingleSized: true,
+			errors: {},
+		});
+	};
+
 	const renderButton = (params: GridRenderCellParams<any, any, any, GridTreeNodeWithRender>) => {
-		return <Button onClick={() => handleEditClick(params.row.firebaseId)}>Test</Button>;
+		return (
+			<Button
+				startIcon={<Edit />}
+				color="warning"
+				onClick={() => handleEditClick(params.row.firebaseId)}>
+				Edit
+			</Button>
+		);
 	};
 
 	const itemColumns: GridColDef[] = [
@@ -160,6 +205,7 @@ const Items = () => {
 			headerName: "",
 			width: 130,
 			align: "right",
+			sortable: false,
 			renderCell: renderButton,
 		},
 	];
@@ -171,30 +217,43 @@ const Items = () => {
 				sx={{ my: 2, display: "flex", verticalAlign: "center", alignItems: "center" }}>
 				<Container disableGutters>
 					<Typography component="h1" variant="h6">
-						Test
+						Items
 					</Typography>
-					<Typography variant="caption">Fill up form below to add new item.</Typography>
+					<Typography variant="caption">
+						Items below will show up in your menu.
+					</Typography>
 				</Container>
-				<Button variant="contained" onClick={() => setOpenEditModal(true)}>
-					Test
-				</Button>
+				<Container disableGutters>
+					<Button
+						variant="contained"
+						onClick={() => setOpenEditModal(true)}
+						startIcon={<AddCircleOutline />}
+						sx={{ float: "right" }}>
+						Add Item
+					</Button>
+				</Container>
 			</Container>
-			<div style={{ height: 371, width: "100%" }}>
-				<DataGrid
-					rows={rows}
-					columns={itemColumns}
-					initialState={{
-						pagination: {
-							paginationModel: { page: 0, pageSize: 5 },
-						},
-					}}
-					pageSizeOptions={[5, 10]}
-				/>
-			</div>
-
+            <Container disableGutters sx={{  height: 371 }}>
+                <DataGrid
+                    rows={rows}
+                    columns={itemColumns}
+                    initialState={{
+                        pagination: {
+                            paginationModel: { page: 0, pageSize: 5 },
+                        },
+                    }}
+                    pageSizeOptions={[5, 10]}
+                />
+            </Container>
 			<Modal keepMounted open={openEditModal} onClose={handleCloseEditModal}>
-				<ItemForm onSubmitClick={handleItemSubmitClick} itemToUpdate={itemToUpdate} />
+				<ItemForm
+					item={item}
+					isLoading={isLoading}
+					onSubmitClick={handleItemSubmitClick}
+					onCloseClick={handleCloseEditModal}
+				/>
 			</Modal>
+			<CustomFooter />
 		</Container>
 	);
 };

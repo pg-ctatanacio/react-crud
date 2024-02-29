@@ -70,8 +70,10 @@ const useItemFormHandler = (newItem?: Item) => {
 
 	const handleSubmit = (callback: SubmitCallback) => {
 		const errors = validateForm();
-		item.errors = errors;
-		callback(item);
+        const newItem = { ...item };
+		newItem.errors = errors;
+        setItem(newItem);
+		callback(newItem);
 	};
 
 	const setItemCategory = (newCategory: string) => {
@@ -117,7 +119,7 @@ const useItemFormHandler = (newItem?: Item) => {
 	};
 
 	return {
-		item,
+		validatedItem: item,
 		setItemCategory,
 		setItemName,
 		setIsSingleSized,
@@ -125,7 +127,7 @@ const useItemFormHandler = (newItem?: Item) => {
 		setItemPrice,
 		setItemCost,
 		setItemStocks,
-		handleSubmit,
+		handleSubmit
 	};
 };
 
